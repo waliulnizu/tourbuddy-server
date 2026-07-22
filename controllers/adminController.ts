@@ -5,11 +5,13 @@ import User from '../models/User';
 import Guide from '../models/Guide';
 import { AuthRequest } from '../types';
 
+import Apply from '../models/Apply';
+
 export const dashboardIndex = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const totalPost = await Post.countDocuments({ status: 'active' });
     const totalPendingPost = await Post.countDocuments({ status: 'pending' });
-    const totalPendingGuide = await Guide.countDocuments({ status: 'deactive' });
+    const totalPendingGuide = await Apply.countDocuments({ status: 'pending' });
     const totalTraveler = await User.countDocuments({ role: 'traveler' });
 
     res.json({ totalPost, totalPendingPost, totalPendingGuide, totalTraveler });

@@ -29,6 +29,9 @@ export const updateStatus = async (req: AuthRequest, res: Response): Promise<voi
     if (newStatus === 'approved') {
       const existingGuide = await Guide.findOne({ phone: app.phone });
       if (!existingGuide) {
+        // Use latest user profile picture if available
+        const user = app.user ? await User.findById(app.user) : null;
+        const profilePic = user?.profilePicture || app.profile_image || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80';
         const guideData: any = {
           name: app.name,
           email: app.email,
@@ -36,7 +39,7 @@ export const updateStatus = async (req: AuthRequest, res: Response): Promise<voi
           address: app.address || '',
           bio: app.bio || '',
           experience: app.experience || '',
-          guide_image: app.profile_image || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+          guide_image: profilePic,
           status: 'active',
         };
         await Guide.create(guideData);

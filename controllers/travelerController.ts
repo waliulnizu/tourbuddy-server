@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import Post from '../models/Post';
 import Blog from '../models/Blog';
 import User from '../models/User';
+import Guide from '../models/Guide';
 import Apply from '../models/Apply';
 import { AuthRequest } from '../types';
 
@@ -34,6 +35,13 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     if (req.file) traveler.profilePicture = `uploads/${req.file.filename}`;
 
     await traveler.save();
+
+    // Sync profile picture to guide and pending application
+    if (req.file) {
+      await Guide.updateOne({ email: traveler.email }, { guide_image: traveler.profilePicture });
+      await Apply.updateOne({ user: travelerId, status: 'pending' }, { profile_image: traveler.profilePicture });
+    }
+
     res.json({ message: 'Profile updated successfully', traveler });
   } catch (err: unknown) {
     res.status(500).json({ error: err instanceof Error ? err.message : 'Server error' });
