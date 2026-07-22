@@ -175,8 +175,8 @@ pnpm start
 
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | admin@tourbuddy.com | admin123 |
-| Traveler | demo@tourbuddy.com | password123 |
+| Admin | admin@tourbuddy.com | Admintourbuddy@1234 |
+| Traveler | demo@tourbuddy.com | demo@1234 |
 
 ## Authentication
 
