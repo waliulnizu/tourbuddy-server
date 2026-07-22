@@ -21,6 +21,15 @@ export const requestJoin = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
+    // Gender check: post er gender requirement onujayi join korte parbe
+    if (post.gender && post.gender !== 'any') {
+      const user = await User.findById(travelerId).select('gender');
+      if (!user || user.gender !== post.gender) {
+        res.status(403).json({ message: `This tour is only for ${post.gender} members` });
+        return;
+      }
+    }
+
     const existing = await Connect.findOne({ post: postId, traveler: travelerId });
     if (existing) {
       res.status(400).json({ message: 'You have already requested to join this tour' });

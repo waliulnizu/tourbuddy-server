@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import Post from '../models/Post';
 import Blog from '../models/Blog';
 import User from '../models/User';
+import Apply from '../models/Apply';
 import { AuthRequest } from '../types';
 
 export const travelerDashboard = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -30,6 +31,7 @@ export const updateProfile = async (req: AuthRequest, res: Response): Promise<vo
     if (phone) traveler.phone = phone;
     if (gender) traveler.gender = gender;
     if (address) traveler.address = address;
+    if (req.file) traveler.profilePicture = `uploads/${req.file.filename}`;
 
     await traveler.save();
     res.json({ message: 'Profile updated successfully', traveler });
@@ -75,7 +77,7 @@ export const myPosts = async (req: AuthRequest, res: Response): Promise<void> =>
 // ✅ ফিক্সড: সরাসরি req.body থেকে image নিয়ে সেভ করা হচ্ছে
 export const savePost = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { title, amount, phone, gender, date_to, date_from, place_from, place_to, details, image } = req.body;
+    const { title, amount, phone, gender, date_to, date_from, place_from, place_to, details, image, members, join_deadline } = req.body;
 
     const post = new Post({
       title,
@@ -87,8 +89,10 @@ export const savePost = async (req: AuthRequest, res: Response): Promise<void> =
       place_from,
       place_to,
       details,
+      members: members || undefined,
+      join_deadline: join_deadline || undefined,
       traveler: req.user?.userId,
-      image: image || null // ফ্রন্টএন্ড থেকে পাঠানো ImgBB URL সরাসরি সেভ হবে
+      image: image || null
     });
 
     await post.save();
@@ -101,7 +105,7 @@ export const savePost = async (req: AuthRequest, res: Response): Promise<void> =
 // ✅ ফিক্সড: সরাসরি req.body থেকে image নিয়ে আপডেট করা হচ্ছে
 export const updatePost = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { title, amount, phone, gender, date_to, date_from, place_from, place_to, details, image } = req.body;
+    const { title, amount, phone, gender, date_to, date_from, place_from, place_to, details, image, members, join_deadline } = req.body;
 
     const post = await Post.findOne({ _id: req.params.id, traveler: req.user?.userId });
     if (!post) {
@@ -119,8 +123,9 @@ export const updatePost = async (req: AuthRequest, res: Response): Promise<void>
     post.place_to = place_to || post.place_to;
     post.details = details || post.details;
     
-    // নতুন ইমেজ URL আসলে সেটি আপডেট হবে, না আসলে আগেরটাই থাকবে
     if (image !== undefined) post.image = image;
+    if (members !== undefined) post.members = members;
+    if (join_deadline !== undefined) post.join_deadline = join_deadline;
 
     await post.save();
     res.json({ message: 'Post updated successfully', post });
@@ -153,11 +158,12 @@ export const myBlogs = async (req: AuthRequest, res: Response): Promise<void> =>
 
 export const saveBlog = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { title, details } = req.body;
+    const { title, details, blog_image } = req.body;
 
     const blog = new Blog({
       title,
       details,
+      blog_image: blog_image || null,
       traveler: req.user?.userId,
       status: 'active'
     });
@@ -171,7 +177,7 @@ export const saveBlog = async (req: AuthRequest, res: Response): Promise<void> =
 
 export const updateBlog = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { title, details } = req.body;
+    const { title, details, blog_image } = req.body;
 
     const blog = await Blog.findOne({ _id: req.params.id, traveler: req.user?.userId });
     if (!blog) {
@@ -181,6 +187,7 @@ export const updateBlog = async (req: AuthRequest, res: Response): Promise<void>
 
     blog.title = title || blog.title;
     blog.details = details || blog.details;
+    if (blog_image !== undefined) blog.blog_image = blog_image;
 
     await blog.save();
     res.json({ message: 'Blog updated successfully', blog });
@@ -197,6 +204,100 @@ export const deleteBlog = async (req: AuthRequest, res: Response): Promise<void>
       return;
     }
     res.json({ message: 'Blog deleted successfully' });
+  } catch (err: unknown) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Server error' });
+  }
+};
+
+export const applyAsGuide = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const travelerId = req.user?.userId;
+
+    const traveler = await User.findById(travelerId);
+    if (!traveler) {
+      res.status(404).json({ message: 'Traveler not found' });
+      return;
+    }
+
+    if (traveler.role === 'guide') {
+      res.status(400).json({ message: 'You are already a guide' });
+      return;
+    }
+
+    const existing = await Apply.findOne({ user: travelerId, status: 'active' });
+    if (existing) {
+      res.status(400).json({ message: 'You already have a pending application' });
+      return;
+    }
+
+    const { phone, address, bio, experience } = req.body;
+
+    const apply = new Apply({
+      name: traveler.name,
+      email: traveler.email,
+      phone: phone || traveler.phone || '',
+      address: address || '',
+      bio: bio || '',
+      experience: experience || '',
+      profile_image: traveler.profilePicture || '',
+      cv: req.file ? `uploads/${req.file.filename}` : req.body.cv || '',
+      user: travelerId
+    });
+
+    await apply.save();
+    res.status(201).json({ message: 'Application submitted successfully', apply });
+  } catch (err: unknown) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Server error' });
+  }
+};
+
+export const myApplication = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const travelerId = req.user?.userId;
+    const app = await Apply.findOne({ user: travelerId }).sort({ _id: -1 });
+    res.json({ application: app });
+  } catch (err: unknown) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Server error' });
+  }
+};
+
+export const updateApplication = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const travelerId = req.user?.userId;
+    const app = await Apply.findOne({ user: travelerId }).sort({ _id: -1 });
+    if (!app) {
+      res.status(404).json({ message: 'Application not found' });
+      return;
+    }
+    if (app.status === 'approved') {
+      res.status(400).json({ message: 'Cannot edit an approved application' });
+      return;
+    }
+    const { phone, address, bio, experience } = req.body;
+    console.log('updateApplication body:', req.body);
+    console.log('updateApplication file:', req.file);
+    if (phone !== undefined) app.phone = phone;
+    if (address !== undefined) app.address = address;
+    if (bio !== undefined) app.bio = bio;
+    if (experience !== undefined) app.experience = experience;
+    if (req.file) app.cv = `uploads/${req.file.filename}`;
+    await app.save();
+    res.json({ message: 'Application updated successfully', application: app });
+  } catch (err: unknown) {
+    console.error('updateApplication error:', err);
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Server error' });
+  }
+};
+
+export const deleteApplication = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const travelerId = req.user?.userId;
+    const app = await Apply.findOneAndDelete({ user: travelerId });
+    if (!app) {
+      res.status(404).json({ message: 'Application not found' });
+      return;
+    }
+    res.json({ message: 'Application deleted successfully' });
   } catch (err: unknown) {
     res.status(500).json({ error: err instanceof Error ? err.message : 'Server error' });
   }

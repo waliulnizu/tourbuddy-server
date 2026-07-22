@@ -6,6 +6,8 @@ export interface IMessage extends Document {
   post: Types.ObjectId;
   text: string;
   read: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const messageSchema = new Schema<IMessage>({

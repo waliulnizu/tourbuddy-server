@@ -14,6 +14,10 @@ import {
   saveBlog,
   updateBlog,
   deleteBlog,
+  applyAsGuide,
+  myApplication,
+  updateApplication,
+  deleteApplication,
   deleteTraveler
 } from '../controllers/travelerController';
 import {
@@ -39,7 +43,7 @@ import {
 router.use(auth);
 
 router.get('/dashboard', travelerDashboard);
-router.put('/profile', updateProfile);
+router.put('/profile', upload.single('profilePicture'), updateProfile);
 router.put('/change-password', changePassword);
 
 router.get('/posts', myPosts);
@@ -51,6 +55,11 @@ router.get('/blogs', myBlogs);
 router.post('/blogs', saveBlog);
 router.put('/blogs/:id', updateBlog);
 router.delete('/blogs/:id', deleteBlog);
+
+router.post('/apply-guide', upload.single('cv'), applyAsGuide);
+router.get('/my-application', myApplication);
+router.put('/my-application', upload.single('cv'), updateApplication);
+router.delete('/my-application', deleteApplication);
 
 router.post('/connect/:postId', requestJoin);
 router.delete('/connect/:postId', cancelJoin);

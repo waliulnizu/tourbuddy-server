@@ -8,7 +8,7 @@ export const submitApplication = async (req: Request, res: Response): Promise<vo
       name,
       email,
       phone,
-      cv: req.body.cv || ''
+      cv: req.file ? `uploads/${req.file.filename}` : req.body.cv || ''
     });
     await apply.save();
     res.status(201).json({ message: 'Application submitted successfully', apply });

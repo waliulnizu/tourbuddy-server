@@ -12,9 +12,9 @@ export const index = async (req: Request, res: Response): Promise<void> => {
 
 export const store = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, designation, phone, status } = req.body;
+    const { name, designation, email, phone, status } = req.body;
     const guide_image = req.file ? `uploads/${(req.file as Express.Multer.File).filename}` : req.body.guide_image;
-    const guide = new Guide({ name, designation, phone, guide_image, status });
+    const guide = new Guide({ name, designation, email, phone, guide_image, status });
     await guide.save();
     res.status(201).json({ message: 'Guide created successfully', guide });
   } catch (err: unknown) {
@@ -31,9 +31,10 @@ export const update = async (req: Request, res: Response): Promise<void> => {
     }
     if (req.body.name) guide.name = req.body.name;
     if (req.body.designation) guide.designation = req.body.designation;
+    if (req.body.email) guide.email = req.body.email;
     if (req.body.phone) guide.phone = req.body.phone;
     if (req.body.status) guide.status = req.body.status;
-    if (req.file) guide.guide_image = (req.file as Express.Multer.File).path;
+    if (req.file) guide.guide_image = `uploads/${(req.file as Express.Multer.File).filename}`;
     else if (req.body.guide_image) guide.guide_image = req.body.guide_image;
     await guide.save();
     res.json({ message: 'Guide updated successfully', guide });

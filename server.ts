@@ -55,6 +55,12 @@ app.get('/', (req, res) => {
   res.json({ message: 'Welcome to TourBuddy API' });
 });
 
+// Global error handler
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: err.message || 'Internal server error' });
+});
+
 const server = app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}.`);
 });

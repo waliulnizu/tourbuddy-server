@@ -26,8 +26,9 @@ export const index = async (req: Request, res: Response): Promise<void> => {
     const banners = await Banner.find();
     const bannertext = await BannerText.findOne();
     const sliders = await Slider.find();
+    const guides = await Guide.find({ status: 'active' }).sort({ _id: -1 }).limit(4);
 
-    res.json({ bannertext, banners, posts, sliders, blogs });
+    res.json({ bannertext, banners, posts, sliders, blogs, guides });
   } catch (err: unknown) {
     res.status(500).json({ error: err instanceof Error ? err.message : 'Server error' });
   }
@@ -90,6 +91,15 @@ export const about = async (req: Request, res: Response): Promise<void> => {
     const aboutData = await About.findOne();
     const guides = await Guide.find({ status: 'active' }).sort({ _id: -1 });
     res.json({ about: aboutData, guides });
+  } catch (err: unknown) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Server error' });
+  }
+};
+
+export const guidesList = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const guides = await Guide.find({ status: 'active' }).sort({ _id: -1 });
+    res.json({ guides });
   } catch (err: unknown) {
     res.status(500).json({ error: err instanceof Error ? err.message : 'Server error' });
   }

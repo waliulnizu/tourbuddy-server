@@ -12,6 +12,8 @@ export interface IPost extends Document {
   place_from?: string;
   place_to?: string;
   image?: string;
+  members?: number;
+  join_deadline?: number;
   traveler: Types.ObjectId;
 }
 
@@ -27,6 +29,8 @@ const postSchema = new Schema<IPost>({
   place_from: { type: String },
   place_to: { type: String },
   image: { type: String },
+  members: { type: Number },
+  join_deadline: { type: Number },
   traveler: { type: Schema.Types.ObjectId, ref: 'User', required: true }
 }, { timestamps: true });
 
